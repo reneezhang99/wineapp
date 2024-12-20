@@ -1,58 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { generateWineProfile } from './wineProfileGenerator';
 import { questions } from './survey';
 import { useRouter } from 'expo-router';
+import { saveSurveyAnswers, getSurveyAnswers, clearStoredData } from './storage-utils';
 
 export default function Page() {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  
-  const handleAnswer = (answer) => {
-    setAnswers({
-      ...answers,
-      [currentQuestionIndex]: answer
-    });
-  };
+  // Load saved answers when component mounts
+  useEffect(() => {
+    loadSavedAnswers();
+  }, []);
 
-  const handleNext = async () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      try {
-        setIsLoading(true);
-        
-        const formattedAnswers = {
-          phoneHabit: answers[0],
-          toxicTrait: answers[1],
-          movieScene: answers[2],
-          weekendPlans: answers[3],
-          screenTime: answers[4]
-        };
-
-        console.log("Sending answers to Claude:", formattedAnswers);
-        
-        const profile = await generateWineProfile(formattedAnswers);
-        console.log("Generated Profile:", profile);
-        
-        router.push({
-          pathname: "/profile",
-          params: { profile }
-        });
-      } catch (error) {
-        console.error("Error generating profile:", error);
-        Alert.alert(
-          "Error",
-          "Failed to generate your wine profile. Please try again."
-        );
-      } finally {
-        setIsLoading(false);
+  const loadSavedAnswers = async () => {
+    try {
+      const savedAnswers = await getSurveyAnswers();
+      if (savedAnswers) {
+        setAnswers(savedAnswers);
       }
+    } catch (error) {
+      console.error("Error loading saved answers:", error);
+    } finally {
+      setIsInitialLoading(false);
     }
   };
+
+  useEffect(() => {
+    const loadSavedAnswers = async () => {
+        const savedAnswers = await getSurveyAnswers();
+        if (savedAnswers) {
+            setAnswers(savedAnswers);
+            // Find the last answered question
+            const lastAnsweredIndex = Object.keys(savedAnswers).length - 1;
+            setCurrentQuestionIndex(lastAnsweredIndex);
+        }
+    };
+    loadSavedAnswers();
+}, []);
+
+  const handleAnswer = async (answer) => {
+    const newAnswers = {
+      ...answers,
+      [currentQuestionIndex]: answer
+    };
+    setAnswers(newAnswers);
+    await saveSurveyAnswers(newAnswers); // Save to AsyncStorage after each answer
+};
+
+const handleNext = async () => {
+  if (currentQuestionIndex < questions.length - 1) {
+    setCurrentQuestionIndex(currentQuestionIndex + 1);
+  } else {
+    try {
+      setIsLoading(true);
+      
+      const formattedAnswers = {
+        phoneHabit: answers[0],
+        toxicTrait: answers[1],
+        movieScene: answers[2],
+        weekendPlans: answers[3],
+        screenTime: answers[4]
+      };
+
+      console.log("Sending answers to Claude:", formattedAnswers);
+      
+      const profile = await generateWineProfile(formattedAnswers);
+      console.log("Generated Profile:", profile);
+      
+      router.push({
+        pathname: "/profile",
+        params: { profile: JSON.stringify(profile) }  // Changed this line
+      });
+    } catch (error) {
+      console.error("Error generating profile:", error);
+      Alert.alert(
+        "Error",
+        "Failed to generate your wine profile. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+};
+
+  // Add reset function for development
+  const handleReset = async () => {
+    await clearStoredData();
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    Alert.alert("Reset", "Survey data has been cleared");
+  };
+
+  // Show loading screen while checking for saved answers
+  if (isInitialLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#FF1493" />
+      </View>
+    );
+  }
 
   const currentQuestion = questions[currentQuestionIndex];
   const selectedAnswer = answers[currentQuestionIndex];
@@ -94,6 +145,14 @@ export default function Page() {
       <Text style={styles.progress}>
         {currentQuestionIndex + 1} / {questions.length}
       </Text>
+
+      {/* Add Reset button for development */}
+      <TouchableOpacity 
+        style={styles.resetButton} 
+        onPress={handleReset}
+      >
+        <Text style={styles.resetButtonText}>Reset Survey (Dev)</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -142,5 +201,18 @@ const styles = StyleSheet.create({
     bottom: 40,
     alignSelf: 'center',
     color: '#666',
+  },
+  // Add styles for reset button
+  resetButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: '#666',
+    padding: 10,
+    borderRadius: 5,
+  },
+  resetButtonText: {
+    color: 'white',
+    fontSize: 12,
   }
 });
