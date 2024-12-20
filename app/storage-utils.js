@@ -44,3 +44,27 @@ export const clearStoredData = async () => {
     return false;
   }
 };
+
+// Add these functions alongside your existing ones in storage-utils.js
+export const saveWineProfile = async (profile) => {
+    try {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.WINE_PROFILE,
+        JSON.stringify(profile)
+      );
+      return true;
+    } catch (error) {
+      console.error('Error saving wine profile:', error);
+      return false;
+    }
+  };
+  
+  export const getWineProfile = async () => {
+    try {
+      const profile = await AsyncStorage.getItem(STORAGE_KEYS.WINE_PROFILE);
+      return profile ? JSON.parse(profile) : null;
+    } catch (error) {
+      console.error('Error getting wine profile:', error);
+      return null;
+    }
+  };

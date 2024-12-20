@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } fr
 import { generateWineProfile } from './wineProfileGenerator';
 import { questions } from './survey';
 import { useRouter } from 'expo-router';
-import { saveSurveyAnswers, getSurveyAnswers, clearStoredData } from './storage-utils';
+import { saveSurveyAnswers, getSurveyAnswers, clearStoredData, saveWineProfile, getWineProfile } from './storage-utils';
 
 export default function Page() {
   const router = useRouter();
@@ -12,36 +12,35 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Load saved answers when component mounts
+  // Load saved data when component mounts
   useEffect(() => {
-    loadSavedAnswers();
-  }, []);
-
-  const loadSavedAnswers = async () => {
-    try {
-      const savedAnswers = await getSurveyAnswers();
-      if (savedAnswers) {
-        setAnswers(savedAnswers);
-      }
-    } catch (error) {
-      console.error("Error loading saved answers:", error);
-    } finally {
-      setIsInitialLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const loadSavedAnswers = async () => {
+    const loadSavedData = async () => {
+      try {
+        // First check if there's a profile
+        const savedProfile = await getWineProfile();
+        if (savedProfile) {
+          router.replace({
+            pathname: "/profile",
+            params: { profile: JSON.stringify(savedProfile) }
+          });
+          return;
+        }
+        
+        // If no profile, then load survey answers
         const savedAnswers = await getSurveyAnswers();
         if (savedAnswers) {
-            setAnswers(savedAnswers);
-            // Find the last answered question
-            const lastAnsweredIndex = Object.keys(savedAnswers).length - 1;
-            setCurrentQuestionIndex(lastAnsweredIndex);
+          setAnswers(savedAnswers);
+          const lastAnsweredIndex = Object.keys(savedAnswers).length - 1;
+          setCurrentQuestionIndex(lastAnsweredIndex);
         }
+      } catch (error) {
+        console.error("Error loading saved data:", error);
+      } finally {
+        setIsInitialLoading(false);
+      }
     };
-    loadSavedAnswers();
-}, []);
+    loadSavedData();
+  }, []);
 
   const handleAnswer = async (answer) => {
     const newAnswers = {
@@ -50,43 +49,46 @@ export default function Page() {
     };
     setAnswers(newAnswers);
     await saveSurveyAnswers(newAnswers); // Save to AsyncStorage after each answer
-};
+  };
 
-const handleNext = async () => {
-  if (currentQuestionIndex < questions.length - 1) {
-    setCurrentQuestionIndex(currentQuestionIndex + 1);
-  } else {
-    try {
-      setIsLoading(true);
-      
-      const formattedAnswers = {
-        phoneHabit: answers[0],
-        toxicTrait: answers[1],
-        movieScene: answers[2],
-        weekendPlans: answers[3],
-        screenTime: answers[4]
-      };
+  const handleNext = async () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      try {
+        setIsLoading(true);
+        
+        const formattedAnswers = {
+          phoneHabit: answers[0],
+          toxicTrait: answers[1],
+          movieScene: answers[2],
+          weekendPlans: answers[3],
+          screenTime: answers[4]
+        };
 
-      console.log("Sending answers to Claude:", formattedAnswers);
-      
-      const profile = await generateWineProfile(formattedAnswers);
-      console.log("Generated Profile:", profile);
-      
-      router.push({
-        pathname: "/profile",
-        params: { profile: JSON.stringify(profile) }  // Changed this line
-      });
-    } catch (error) {
-      console.error("Error generating profile:", error);
-      Alert.alert(
-        "Error",
-        "Failed to generate your wine profile. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
+        console.log("Sending answers to Claude:", formattedAnswers);
+        
+        const profile = await generateWineProfile(formattedAnswers);
+        console.log("Generated Profile:", profile);
+        
+        // Save the profile before navigating
+        await saveWineProfile(profile);
+        
+        router.push({
+          pathname: "/profile",
+          params: { profile: JSON.stringify(profile) }
+        });
+      } catch (error) {
+        console.error("Error generating profile:", error);
+        Alert.alert(
+          "Error",
+          "Failed to generate your wine profile. Please try again."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }
-};
+  };
 
   // Add reset function for development
   const handleReset = async () => {
@@ -202,7 +204,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     color: '#666',
   },
-  // Add styles for reset button
   resetButton: {
     position: 'absolute',
     top: 40,
