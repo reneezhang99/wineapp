@@ -1,12 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ANTHROPIC_API_KEY } from '@env';
 
-// Initialize Claude client with environment variable
+interface SurveyAnswers {
+  [key: string]: any;
+}
+
+// Initialize Claude client with API key
 const anthropic = new Anthropic({
-  apiKey: ANTHROPIC_API_KEY
+  apiKey: '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'
 });
 
-export async function generateWineProfile(surveyAnswers) {
+export async function generateWineProfile(surveyAnswers: SurveyAnswers): Promise<string> {
   try {
     const response = await anthropic.messages.create({
       model: 'claude-3-sonnet-20240229',
@@ -24,7 +27,6 @@ export async function generateWineProfile(surveyAnswers) {
       }]
     });
 
-    // Extract the text content from the response
     return response.content[0].text;
   } catch (error) {
     console.error('Error generating profile:', error);
