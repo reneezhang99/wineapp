@@ -9,7 +9,7 @@ export default function Layout() {
   useEffect(() => {
     const checkProfile = async () => {
       const savedProfile = await getWineProfile();
-      if (savedProfile) {
+      if (savedProfile && window.location.pathname === '/') {  // Only redirect if we're on the index page
         router.replace({
           pathname: "/profile",
           params: { profile: JSON.stringify(savedProfile) }
@@ -20,9 +20,21 @@ export default function Layout() {
   }, []);
 
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ title: "Wine Profile Survey" }} />
-      <Stack.Screen name="profile" options={{ title: "Your Wine Profile" }} />
+    <Stack 
+      screenOptions={{
+        headerTitle: '',
+        headerTransparent: true,
+        animation: 'slide_from_right'
+      }}
+    >
+      <Stack.Screen 
+        name="index"
+        options={{
+          headerShown: false
+        }}
+      />
+      <Stack.Screen name="survey" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }
