@@ -20,9 +20,23 @@ export default function Layout() {
   }, []);
 
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ title: "Wine Profile Survey" }} />
-      <Stack.Screen name="profile" options={{ title: "Your Wine Profile" }} />
+    <Stack 
+      screenOptions={{
+        headerTitle: '',
+        headerBackTitle: 'Back',    // Custom text
+        headerBackTitleVisible: false,  // Removes text, leaves just arrow
+        headerTransparent: true,
+        animation: 'slide_from_right'
+      }}
+    >
+      <Stack.Screen 
+        name="index"
+        options={{
+          headerShown: false // Welcome screen has no header
+        }}
+      />
+      <Stack.Screen name="survey" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

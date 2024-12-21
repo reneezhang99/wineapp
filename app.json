@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app requires access to the camera to take photos.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
