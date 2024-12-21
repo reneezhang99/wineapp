@@ -1,38 +1,28 @@
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { clearStoredData } from './storage-utils';  // Add this import
-
+import { clearStoredData } from './storage-utils';
 
 export default function Profile() {
   const router = useRouter();
   const { profile } = useLocalSearchParams();
-  
-  // Add error handling for JSON parsing
-  let parsedProfile;
-  try {
-    parsedProfile = JSON.parse(profile);
-  } catch (error) {
-    console.error('Error parsing profile:', error);
-    // If parsing fails, redirect to survey
-    router.replace('/survey');
-    return <Text>Loading...</Text>;  // Add Text wrapper here
-  }
+  const parsedProfile = JSON.parse(profile);
 
-// Use handleReset instead of handleRestart to actually clear the data
-const handleReset = async () => {
-  try {
-    await clearStoredData();  // Clear the stored data
-    router.push('/');  // Go back to index/welcome screen
-  } catch (error) {
-    console.error('Error resetting:', error);
-  }
-};
+  const handleReset = async () => {
+    try {
+      await clearStoredData();
+      router.push('/');
+    } catch (error) {
+      console.error('Error resetting:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollContent}>
         <View style={styles.content}>
-          <Text style={styles.title}>🍷 Your Wine Personality 🍷</Text>
+          <Text style={styles.title}>
+            <Text>🍷</Text> Your Wine Personality <Text>🍷</Text>
+          </Text>
           
           <Text style={styles.subheading}>Aura Name: {parsedProfile.auraName}</Text>
           
@@ -47,12 +37,15 @@ const handleReset = async () => {
         </View>
       </ScrollView>
 
-      <TouchableOpacity 
-        style={styles.devButton} 
-        onPress={handleReset}
-      >
-        <Text style={styles.devButtonText}>Restart Survey (Dev)</Text>
-      </TouchableOpacity>
+      {/* Only dev reset button at bottom */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={styles.devButton} 
+          onPress={handleReset}
+        >
+          <Text style={styles.devButtonText}>Reset Survey (Dev)</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -62,13 +55,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
   },
-  scrollView: {
+  scrollContent: {
     flex: 1,
   },
   content: {
     padding: 20,
     paddingTop: 60,
-    paddingBottom: 80,
   },
   title: {
     fontSize: 24,
@@ -86,10 +78,12 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 20,
   },
+  buttonContainer: {
+    padding: 20,
+    paddingBottom: 40,
+    alignItems: 'flex-end', // Aligns reset button to right
+  },
   devButton: {
-    position: 'absolute',
-    bottom: 40,
-    right: 20,
     backgroundColor: '#666',
     padding: 10,
     borderRadius: 5,
@@ -97,6 +91,5 @@ const styles = StyleSheet.create({
   devButtonText: {
     color: 'white',
     fontSize: 12,
-    fontWeight: 'bold',
   }
 });

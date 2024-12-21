@@ -9,7 +9,7 @@ export default function Layout() {
   useEffect(() => {
     const checkProfile = async () => {
       const savedProfile = await getWineProfile();
-      if (savedProfile && window.location.pathname === '/') {  // Only redirect if we're on the index page
+      if (savedProfile) {
         router.replace({
           pathname: "/profile",
           params: { profile: JSON.stringify(savedProfile) }
