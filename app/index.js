@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { theme } from './theme';
+
 
 export default function Index() {
   const router = useRouter();
@@ -25,34 +27,22 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.medium,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'white',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: theme.fonts.heading,
+    color: theme.colors.text,
+    fontSize: 32,
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#FF1493',
   },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#666',
-  },
-  startButton: {
-    backgroundColor: '#FF1493',
-    padding: 15,
-    borderRadius: 10,
-    width: '80%',
+  button: {
+    backgroundColor: theme.colors.button,
+    padding: theme.spacing.medium,
+    borderRadius: 8,
+    width: '100%',
     alignItems: 'center',
-  },
-  startButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+  }
 });
