@@ -1,15 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Image, SafeAreaView } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar, Composer } from 'react-native-gifted-chat';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { theme } from './theme';
-import { generateClaudeResponse } from './prompts'; // Function to call Claude API
+import { generateClaudeResponse, analyzeWineImage } from './prompts';
 import { Ionicons } from '@expo/vector-icons';
+import { getStoredWineProfile } from './storage-utils';
 
 export default function Page() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [wineProfile, setWineProfile] = useState(null);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -17,6 +20,14 @@ export default function Page() {
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   };
+
+  useEffect(() => {
+    const loadWineProfile = async () => {
+      const profile = await getStoredWineProfile();
+      setWineProfile(profile);
+    };
+    loadWineProfile();
+  }, []);
 
   useEffect(() => {
     setMessages([
@@ -32,39 +43,121 @@ export default function Page() {
     ]);
   }, []);
 
+  useEffect(() => {
+    if (params?.imageUri) {
+      const processImage = async () => {
+        try {
+          // Show initial image message
+          const imageMessage = {
+            _id: Math.random().toString(),
+            text: "Let me analyze this wine menu...",
+            createdAt: new Date(),
+            user: {
+              _id: 2,
+              name: 'Remi',
+            },
+            image: params.imageUri,
+          };
+          
+          setMessages(previousMessages =>
+            GiftedChat.append(previousMessages, [imageMessage])
+          );
+
+          setIsTyping(true);
+
+          // Convert image to base64 with proper formatting
+          const response = await fetch(params.imageUri);
+          const blob = await response.blob();
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              try {
+                const base64Data = reader.result.split(',')[1];
+                resolve(base64Data);
+              } catch (error) {
+                reject(error);
+              }
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+
+          // Format image data for Claude
+          const formattedImageData = {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: 'image/jpeg',
+              data: base64
+            }
+          };
+
+          // Analyze with Claude
+          const analysis = await analyzeWineImage(formattedImageData, wineProfile);
+          
+          const analysisMessage = {
+            _id: Math.random().toString(),
+            text: analysis,
+            createdAt: new Date(),
+            user: {
+              _id: 2,
+              name: 'Remi',
+            },
+          };
+          
+          setMessages(previousMessages =>
+            GiftedChat.append(previousMessages, [analysisMessage])
+          );
+        } catch (error) {
+          console.error('Error:', error);
+          const errorMessage = {
+            _id: Math.random().toString(),
+            text: "I'm having trouble reading this image. Could you try taking another photo with better lighting?",
+            createdAt: new Date(),
+            user: {
+              _id: 2,
+              name: 'Remi',
+            },
+          };
+          setMessages(previousMessages =>
+            GiftedChat.append(previousMessages, [errorMessage])
+          );
+        } finally {
+          setIsTyping(false);
+        }
+      };
+
+      processImage();
+    }
+  }, [params?.imageUri]);
+
   const onSend = useCallback(async (newMessages = []) => {
     setMessages(previousMessages =>
       GiftedChat.append(previousMessages, newMessages)
     );
 
-    const userMessage = newMessages[0]?.text; // Get the user's message
+    const userMessage = newMessages[0]?.text;
     if (!userMessage) return;
 
     setIsTyping(true);
 
     try {
-      // Call the Claude API to generate a response
-      const response = await generateClaudeResponse(userMessage);
+      const response = await generateClaudeResponse(userMessage, wineProfile);
       const botMessage = {
-        _id: Math.random().toString(), // Unique ID for the bot message
-        text: typeof response === 'string' ? response : JSON.stringify(response), // Ensure text is a string
+        _id: Math.random().toString(),
+        text: typeof response === 'string' ? response : JSON.stringify(response),
         createdAt: new Date(),
         user: {
-            _id: 2, // ID for the bot
-            name: 'Remi',
+          _id: 2,
+          name: 'Remi',
         },
-    };
-
-    console.log('Claude Response:', response);
-
-    
+      };
 
       setMessages(previousMessages =>
-        GiftedChat.append(previousMessages, botMessage)
+        GiftedChat.append(previousMessages, [botMessage])
       );
     } catch (error) {
       console.error('Error fetching response from Claude:', error);
-
       const errorMessage = {
         _id: Math.random().toString(),
         text: 'Oops! Something went wrong. Please try again later.',
@@ -76,12 +169,12 @@ export default function Page() {
       };
 
       setMessages(previousMessages =>
-        GiftedChat.append(previousMessages, errorMessage)
+        GiftedChat.append(previousMessages, [errorMessage])
       );
     } finally {
       setIsTyping(false);
     }
-  }, []);
+  }, [wineProfile]);
 
   const renderBubble = (props) => {
     return (
@@ -103,6 +196,21 @@ export default function Page() {
             color: 'white',
           },
         }}
+      />
+    );
+  };
+
+  const renderMessageImage = (props) => {
+    return (
+      <Image 
+        source={{ uri: props.currentMessage.image }} 
+        style={{ 
+          width: 200, 
+          height: 200, 
+          borderRadius: 13, 
+          margin: 3,
+        }}
+        resizeMode="cover"
       />
     );
   };
@@ -145,7 +253,7 @@ export default function Page() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.greeting}>{getGreeting()},</Text>
         <Text style={styles.name}>Renee</Text>
@@ -153,22 +261,24 @@ export default function Page() {
           Ask Remi for wine suggestions, pairings or just have a chat about wine ✨
         </Text>
       </View>
-
-      <GiftedChat
-        messages={messages}
-        onSend={onSend}
-        user={{ _id: 1 }}
-        renderBubble={renderBubble}
-        renderInputToolbar={renderInputToolbar}
-        renderAvatar={null}
-        minInputToolbarHeight={60}
-        maxComposerHeight={100}
-        isTyping={isTyping}
-        textInputProps={{
-          keyboardAppearance: 'dark',
-        }}
-      />
-    </View>
+      <View style={styles.chatContainer}>
+        <GiftedChat
+          messages={messages}
+          onSend={onSend}
+          user={{ _id: 1 }}
+          renderBubble={renderBubble}
+          renderInputToolbar={renderInputToolbar}
+          renderMessageImage={renderMessageImage}
+          renderAvatar={null}
+          minInputToolbarHeight={60}
+          maxComposerHeight={100}
+          isTyping={isTyping}
+          textInputProps={{
+            keyboardAppearance: 'dark',
+          }}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -177,9 +287,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  chatContainer: {
+    flex: 1,
+  },
   header: {
     padding: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 10 : 40,
     alignItems: 'center',
   },
   greeting: {
@@ -223,5 +336,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderTopWidth: 0,
     paddingHorizontal: 0,
-  },
+  }
 });

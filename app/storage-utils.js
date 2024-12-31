@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -45,7 +47,7 @@ export const clearStoredData = async () => {
   }
 };
 
-// Add these functions alongside your existing ones in storage-utils.js
+// Add these functions alongside your existing ones in storage-utils.js for wine profile storage
 export const saveWineProfile = async (profile) => {
     try {
       await AsyncStorage.setItem(
@@ -65,6 +67,16 @@ export const saveWineProfile = async (profile) => {
       return profile ? JSON.parse(profile) : null;
     } catch (error) {
       console.error('Error getting wine profile:', error);
+      return null;
+    }
+  };
+
+  export const getStoredWineProfile = async () => {
+    try {
+      const profile = await AsyncStorage.getItem(STORAGE_KEYS.WINE_PROFILE);
+      return profile ? JSON.parse(profile) : null;
+    } catch (error) {
+      console.error('Error getting stored wine profile:', error);
       return null;
     }
   };
