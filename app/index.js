@@ -1,99 +1,25 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { generateWineProfile } from './wineProfileGenerator';
-import { questions } from './survey';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { theme } from './theme';
 
-export default function Page() {
+
+export default function Index() {
   const router = useRouter();
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
 
-  
-  const handleAnswer = (answer) => {
-    setAnswers({
-      ...answers,
-      [currentQuestionIndex]: answer
-    });
+  const navigateToSurvey = () => {
+    router.push('/survey');
   };
-
-  const handleNext = async () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      try {
-        setIsLoading(true);
-        
-        const formattedAnswers = {
-          phoneHabit: answers[0],
-          toxicTrait: answers[1],
-          movieScene: answers[2],
-          weekendPlans: answers[3],
-          screenTime: answers[4]
-        };
-
-        console.log("Sending answers to Claude:", formattedAnswers);
-        
-        const profile = await generateWineProfile(formattedAnswers);
-        console.log("Generated Profile:", profile);
-        
-        router.push({
-          pathname: "/profile",
-          params: { profile }
-        });
-      } catch (error) {
-        console.error("Error generating profile:", error);
-        Alert.alert(
-          "Error",
-          "Failed to generate your wine profile. Please try again."
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const currentQuestion = questions[currentQuestionIndex];
-  const selectedAnswer = answers[currentQuestionIndex];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.question}>{currentQuestion.text}</Text>
-      
-      {currentQuestion.options.map((answer) => (
-        <TouchableOpacity
-          key={answer}
-          style={[
-            styles.answerButton,
-            selectedAnswer === answer && styles.selectedAnswer
-          ]}
-          onPress={() => handleAnswer(answer)}
-          disabled={isLoading}
-        >
-          <Text style={styles.answerText}>{answer}</Text>
-        </TouchableOpacity>
-      ))}
-
-      {selectedAnswer && (
-        <TouchableOpacity 
-          style={styles.nextButton} 
-          onPress={handleNext}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.nextButtonText}>
-              {currentQuestionIndex === questions.length - 1 ? 'Generate Profile' : 'Next'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      )}
-
-      <Text style={styles.progress}>
-        {currentQuestionIndex + 1} / {questions.length}
+      <Text style={styles.title}>Remi</Text>
+      <Text style={styles.subtitle}>
+        The right wine for your vibe.
       </Text>
+      <TouchableOpacity style={styles.startButton} onPress={navigateToSurvey}>
+        <Text style={styles.startButtonText}>Start sipping</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -101,46 +27,22 @@ export default function Page() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.medium,
     justifyContent: 'center',
-    backgroundColor: 'white',
+    alignItems: 'center',
   },
-  question: {
-    fontSize: 24,
-    marginBottom: 20,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  answerButton: {
-    padding: 15,
-    marginVertical: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-  },
-  selectedAnswer: {
-    backgroundColor: '#FFB6C1',
-  },
-  answerText: {
-    fontSize: 16,
+  title: {
+    fontFamily: theme.fonts.heading,
+    color: theme.colors.text,
+    fontSize: 32,
     textAlign: 'center',
   },
-  nextButton: {
-    backgroundColor: '#FF1493',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20,
-    alignSelf: 'flex-end',
-    width: 100,
-  },
-  nextButtonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  progress: {
-    position: 'absolute',
-    bottom: 40,
-    alignSelf: 'center',
-    color: '#666',
+  button: {
+    backgroundColor: theme.colors.button,
+    padding: theme.spacing.medium,
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
   }
 });

@@ -8,8 +8,13 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "sdkVersion": "52.0.0",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app requires access to the camera to take photos.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to upload photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -32,7 +37,16 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
+        }
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
