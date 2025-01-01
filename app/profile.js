@@ -21,7 +21,7 @@ export default function Profile() {
     <View style={styles.container}>
       <ScrollView style={styles.scrollContent}>
         <View style={styles.content}>
-          <Text style={styles.title}>Your Wine Profile</Text>
+          <Text style={styles.title}>Your Wine Aura ✨</Text>
           
           <Text style={styles.subheading}>
             {parsedProfile.auraName}

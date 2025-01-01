@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from './theme';
+import * as ImageManipulator from 'expo-image-manipulator';
+
 
 export default function CameraScreen() {
   const [photo, setPhoto] = useState(null);
@@ -18,10 +20,10 @@ export default function CameraScreen() {
     if (cameraRef.current) {
       try {
         const photo = await cameraRef.current.takePictureAsync({
-          base64: true,
-          quality: 1,
+          quality: 0.7, // Lower initial quality
         });
-        setPhoto(photo);
+        const compressed = await compressImage(photo.uri);
+        setPhoto(compressed);
       } catch (error) {
         console.error('Camera error:', error);
       }
@@ -33,15 +35,41 @@ export default function CameraScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        quality: 1,
-        base64: true
+        quality: 0.7, // Lower initial quality
       });
-
+  
       if (!result.canceled) {
-        setPhoto(result.assets[0]);
+        const compressed = await compressImage(result.assets[0].uri);
+        setPhoto(compressed);
       }
     } catch (error) {
       console.error('Image picker error:', error);
+    }
+  };
+
+  const compressImage = async (uri) => {
+    try {
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1080 } }], // Resize to reasonable dimensions
+        {
+          compress: 0.7, // Compression quality (0 to 1)
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true
+        }
+      );
+
+      const checkFileSize = async (uri) => {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        const sizeInMB = blob.size / (1024 * 1024);
+        return sizeInMB <= 5;
+      };
+    
+      return manipulatedImage;
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      throw error;
     }
   };
 

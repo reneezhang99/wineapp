@@ -112,7 +112,7 @@ export default function Page() {
           console.error('Error:', error);
           const errorMessage = {
             _id: Math.random().toString(),
-            text: "I'm having trouble reading this image. Could you try taking another photo with better lighting?",
+            text: "I'm having trouble reading this image. Could you try taking another photo?",
             createdAt: new Date(),
             user: {
               _id: 2,

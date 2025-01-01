@@ -97,6 +97,24 @@ export async function analyzeWineImage(imageData, wineProfile = null) {
 
     systemPrompt += " When analyzing wine labels or menus, provide concise and accessible information. For labels, describe the wine's characteristics. For menus, suggest 2-3 options that would be interesting. Keep the tone conversational and avoid technical jargon.";
 
+    const messages = [{
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: 'image/jpeg',
+            data: imageData.source.data
+          }
+        },
+        {
+          type: 'text',
+          text: "What can you tell me about this wine menu or label?"
+        }
+      ]
+    }];
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -107,16 +125,7 @@ export async function analyzeWineImage(imageData, wineProfile = null) {
       body: JSON.stringify({
         model: 'claude-3-sonnet-20240229',
         max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: [
-            imageData,
-            {
-              type: 'text',
-              text: "What can you tell me about this wine menu or label?"
-            }
-          ]
-        }],
+        messages: messages,
         system: systemPrompt
       })
     });
