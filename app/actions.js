@@ -7,6 +7,7 @@ import { generateClaudeResponse, analyzeWineImage } from './prompts';
 import { Ionicons } from '@expo/vector-icons';
 import { getStoredWineProfile } from './storage-utils';
 import { initializeSession, saveMessages, formatMessagesForContext } from './chat-session';
+import PresetPrompts from './components/PresetPrompts';
 
 export default function Page() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function Page() {
   const [isTyping, setIsTyping] = useState(false);
   const [wineProfile, setWineProfile] = useState(null);
   const [pendingImage, setPendingImage] = useState(null);
+  const [inputText, setInputText] = useState('');
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -50,7 +52,6 @@ export default function Page() {
         ]);
       }
     };
-    
     initChat();
   }, []);
 
@@ -60,10 +61,13 @@ export default function Page() {
     }
   }, [params?.imageUri]);
 
+  const handlePromptSelect = useCallback((promptText) => {
+    setInputText(promptText);
+  }, []);
+
   const onSend = useCallback(async (newMessages = []) => {
     const userMessage = newMessages[0]?.text;
     
-    // Create the message object
     const messageToSend = {
       _id: Math.random().toString(),
       text: userMessage || "",
@@ -72,19 +76,15 @@ export default function Page() {
       ...(pendingImage && { image: pendingImage }),
     };
 
-    // Update chat with user's message
     const updatedMessages = GiftedChat.append(messages, [messageToSend]);
     setMessages(updatedMessages);
     await saveMessages(updatedMessages);
 
-    // Clear pending image
     setPendingImage(null);
-
     setIsTyping(true);
 
     try {
       if (pendingImage) {
-        // Process image with Claude
         const response = await fetch(pendingImage);
         const blob = await response.blob();
         const base64 = await new Promise((resolve, reject) => {
@@ -122,7 +122,6 @@ export default function Page() {
         setMessages(finalMessages);
         await saveMessages(finalMessages);
       } else {
-        // Regular text message processing
         const messageHistory = formatMessagesForContext(messages);
         const response = await generateClaudeResponse(userMessage, wineProfile, messageHistory);
         
@@ -153,25 +152,39 @@ export default function Page() {
       setIsTyping(false);
     }
   }, [messages, pendingImage, wineProfile]);
-
   const renderBubble = (props) => {
     return (
       <Bubble
         {...props}
         wrapperStyle={{
           left: {
-            backgroundColor: 'white',
+            backgroundColor: 'transparent',
+            marginVertical: 8,
           },
           right: {
-            backgroundColor: theme.colors.button,
+            backgroundColor: 'white',
+            marginVertical: 8,
+            borderRadius: 24,  // More rounded corners
+            shadowColor: '#000',
+            shadowOffset: {
+              width: 0,
+              height: 1,
+            },
+            shadowOpacity: 0.08,  // Very subtle shadow
+            shadowRadius: 8,      // Soft spread
+            elevation: 2,         // Android shadow
           },
         }}
         textStyle={{
           left: {
-            color: theme.colors.text,
+            color: '#2B2B2B',
+            fontSize: 15,
           },
           right: {
-            color: 'white',
+            color: '#2B2B2B',
+            fontSize: 17,         // Slightly larger font
+            lineHeight: 24,       // Better line height
+            fontWeight: '400',    // Regular weight
           },
         }}
       />
@@ -221,6 +234,8 @@ export default function Page() {
               {...composerProps}
               textInputStyle={styles.textInput}
               placeholder={pendingImage ? "Add a question about this wine..." : "Ask Remi..."}
+              text={inputText}
+              onTextChanged={text => setInputText(text)}
             />
             <TouchableOpacity
               onPress={() => router.push('/camera')}
@@ -229,16 +244,19 @@ export default function Page() {
               <Ionicons name="camera-outline" size={24} color={theme.colors.button} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() =>
-                props.onSend && props.onSend({ text: props.text.trim() }, true)
-              }
+              onPress={() => {
+                if (inputText.trim()) {
+                  props.onSend && props.onSend({ text: inputText.trim() }, true);
+                  setInputText('');
+                }
+              }}
               style={styles.iconButton}
-              disabled={!props.text.trim() && !pendingImage}
+              disabled={!inputText.trim() && !pendingImage}
             >
               <Ionicons 
                 name="arrow-forward" 
                 size={24} 
-                color={(!props.text.trim() && !pendingImage) ? '#ccc' : theme.colors.button} 
+                color={(!inputText.trim() && !pendingImage) ? '#ccc' : theme.colors.button} 
               />
             </TouchableOpacity>
           </View>
@@ -257,7 +275,8 @@ export default function Page() {
           Ask Remi for wine suggestions, pairings or just have a chat about wine ✨
         </Text>
       </View>
-      <View style={styles.chatContainer}>
+      <PresetPrompts onPromptSelect={handlePromptSelect} />
+      <View style={[styles.chatContainer, { marginTop: 10 }]}>
         <GiftedChat
           messages={messages}
           onSend={onSend}
@@ -270,7 +289,8 @@ export default function Page() {
           maxComposerHeight={100}
           isTyping={isTyping}
           textInputProps={{
-            keyboardAppearance: 'dark',
+            keyboardAppearance: 'light',
+            
           }}
         />
       </View>
