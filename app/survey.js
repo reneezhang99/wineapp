@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { generateWineProfile } from './prompts';
 import { questions } from './questions';
@@ -8,6 +8,9 @@ import { theme } from './theme';
 
 export default function Survey() {
   const router = useRouter();
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [name, setName] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +33,8 @@ export default function Survey() {
           setAnswers(savedAnswers);
           const lastAnsweredIndex = Object.keys(savedAnswers).length - 1;
           setCurrentQuestionIndex(lastAnsweredIndex);
+          setShowWelcome(false);
+          setShowNameInput(false);
         }
       } catch (error) {
         console.error('Error loading saved data:', error);
@@ -39,6 +44,20 @@ export default function Survey() {
     };
     loadSavedData();
   }, []);
+
+  const handleGetStarted = () => {
+    setShowWelcome(false);
+    setShowNameInput(true);
+  };
+
+  const handleNameSubmit = async () => {
+    if (!name.trim()) {
+      Alert.alert('Please enter your name');
+      return;
+    }
+    await saveSurveyAnswers({ ...answers, name: name.trim() });
+    setShowNameInput(false);
+  };
 
   const handleAnswer = async (answer) => {
     const updatedAnswers = { ...answers, [currentQuestionIndex]: answer };
@@ -53,6 +72,7 @@ export default function Survey() {
       try {
         setIsLoading(true);
         const formattedAnswers = {
+          name: answers.name,
           phoneHabit: answers[0],
           toxicTrait: answers[1],
           movieScene: answers[2],
@@ -82,6 +102,9 @@ export default function Survey() {
     await clearStoredData();
     setAnswers({});
     setCurrentQuestionIndex(0);
+    setShowWelcome(true);
+    setShowNameInput(false);
+    setName('');
     Alert.alert('Reset', 'Survey data has been cleared.');
   };
 
@@ -93,10 +116,53 @@ export default function Survey() {
     );
   }
 
+  if (showWelcome) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.contentContainer}>
+          <Text style={[styles.question, { fontSize: 32 }]}>Remi is your personal wine AI.</Text>
+          <Text style={styles.helperText}>Get help choosing from a wine menu, or what bottle to gift a friend – just ask Remi. </Text>
+          
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={handleGetStarted}
+          >
+            <Text style={styles.continueButtonText}>Get started</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (showNameInput) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.contentContainer}>
+          <Text style={styles.question}>Firstly, lets get to know each other ...</Text>
+          <Text style={styles.helperText}>What can Remi call you?</Text>
+          
+          <TextInput
+            style={styles.nameInput}
+            placeholder="Name"
+            value={name}
+            onChangeText={setName}
+            placeholderTextColor="#999"
+          />
+          
+          <TouchableOpacity
+            style={[styles.continueButton, !name.trim() && styles.disabledButton]}
+            onPress={handleNameSubmit}
+            disabled={!name.trim()}
+          >
+            <Text style={styles.continueButtonText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   const currentQuestion = questions[currentQuestionIndex];
   const selectedAnswer = answers[currentQuestionIndex];
-
-  // Calculate progress percentage (based on current question index)
   const progress = (currentQuestionIndex / (questions.length - 1)) * 100;
 
   return (
@@ -167,30 +233,30 @@ const styles = StyleSheet.create({
     marginBottom: 80,
   },
   progressContainer: {
-    marginTop: 60,  // Adjusted to bring the progress bar lower
-    marginBottom: 40,  // Space between progress bar and other content
-    alignItems: 'center',  // Keep the progress container centered
+    marginTop: 60,
+    marginBottom: 40,
+    alignItems: 'center',
   },
   progressTextContainer: {
-    flexDirection: 'column', // Make sure this is present
-    marginBottom: 20,  // Increased margin between text and progress bar
-    alignItems: 'flex-start',  // Align text to the left
-    width: '100%',  // Ensure it spans the entire width of the container
+    flexDirection: 'column',
+    marginBottom: 20,
+    alignItems: 'flex-start',
+    width: '100%',
   },
   progressText: {
     color: '#666666',
     fontSize: 12,
     textAlign: 'left',
-    marginLeft: 0,  // Align text left with some padding
+    marginLeft: 0,
     marginTop: 5,
   },
   progressBar: {
-    width: '70%',  // Keep the width of the progress bar to 70%
+    width: '70%',
     height: 4,
     backgroundColor: '#E5E5E5',
     borderRadius: 2,
     overflow: 'hidden',
-    marginTop: 16,  // Adds a little more space between progress bar and text
+    marginTop: 16,
   },
   progressFill: {
     height: '100%',
@@ -206,8 +272,18 @@ const styles = StyleSheet.create({
   helperText: {
     fontSize: 16,
     textAlign: 'center',
+    maxWidth: '90%',
+    alignSelf: 'center',
     color: '#666666',
     marginBottom: 40,
+  },
+  nameInput: {
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 8,
+    padding: 16,
+    fontSize: 16,
+    marginBottom: 20,
+    color: theme.colors.text,
   },
   answerButton: {
     padding: 16,
@@ -237,6 +313,9 @@ const styles = StyleSheet.create({
     bottom: 40,
     left: 20,
     right: 20,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   continueButtonText: {
     color: 'white',

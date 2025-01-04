@@ -15,11 +15,11 @@ export async function generateWineProfile(surveyAnswers) {
         temperature: 0.7,
         messages: [{
           role: 'user',
-          content: `You are a wine personality analyzer. Based on the survey answers, generate a wine personality profile. Your response must follow these EXACT rules:
+          content: `You are a friendly wine expert. Based on the survey answers, generate a wine persona based on their preferences. Your response must follow these EXACT rules:
 
 1. Respond with EXACTLY these 5 lines in this EXACT format with no extra text or variations:
 
-Line 1: DESCRIPTION: [a 70-80 word personality description]
+Line 1: DESCRIPTION: [a 70-80 word wine preference description]
 Line 2: ACIDITY: [must be exactly Low, Medium, or High]
 Line 3: BODY: [must be exactly Light, Medium, or Full]
 Line 4: SWEETNESS: [must be exactly Low, Medium, or High]
