@@ -13,20 +13,20 @@ export const questions = [
     id: 2,
     text: "Where's your food happy place?",
     options: [
+      "Hole-in-the-wall: plastic chairs but epic food",
       "Local pub: steak & chips",
-      "Fine dining: chef's tasting menu",
       "Wine bar: shared plates & good drinks",
-      "Hole-in-the-wall: plastic chairs but epic food"
+      "Fine dining: chef's tasting menu"
     ]
   },
   {
     id: 3,
-    text: "On a night out, when are you getting home by?",
+    text: "Your ideal drink is?",
     options: [
-      "10pm - ready for bed 🤓",
-      "12am - last train home 🚃",
-      "2am - after a kebab 🌯",
-      "Sunrise - help 🥲"
+      "Crisp and bright",
+      "Fruity and playful",
+      "Rich and velvety",
+      "Complex and adventurous"
     ]
   },
   {
