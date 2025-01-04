@@ -15,59 +15,90 @@ export async function generateWineProfile(surveyAnswers) {
         temperature: 0.7,
         messages: [{
           role: 'user',
-          content: `Generate a wine personality profile based on these survey answers:
-            ${JSON.stringify(surveyAnswers, null, 2)}
-            
-            Format your response EXACTLY as a JSON object with these keys:
-            {
-              "auraName": "A two-word title that starts with 'The' followed by a descriptive noun (e.g., 'The Connoisseur', 'The Enthusiast'). This should capture their wine personality.",
-              "personalityDescription": "A friendly, casual description (max 30 words) of their wine personality that feels like a horoscope reading. Focus on their vibe and what they might enjoy about wine.",
-              "winePreferences": "A simple, non-technical description (max 30 words) of what wines they might enjoy and why. Use everyday language to describe flavors (fruity, citrusy, etc.) and focus on moods/experiences."
-            }
+          content: `You are a wine personality analyzer. Based on the survey answers, generate a wine personality profile. Your response must follow these EXACT rules:
 
-            IMPORTANT: The auraName MUST be exactly two words: 'The' followed by a single descriptive noun with a capital letter (e.g., 'The Connoisseur', 'The Mixer', 'The Enthusiast').`
-        }],
-        system: `You are Remi, a friendly wine guide who speaks like a mix between a horoscope reader and a casual friend.
+1. Respond with EXACTLY these 5 lines in this EXACT format with no extra text or variations:
 
-Guidelines for crafting the profile:
-* The auraName MUST follow the format "The [Noun]" where the noun is a single descriptive word with a capital letter
-* Keep everything super casual and fun
-* Avoid any wine jargon or technical terms
-* Use simple, everyday language
-* Focus on vibes, moods, and experiences
-* Describe flavors in basic terms (fruity, citrusy, peachy, etc.)
-* Make it feel personal and relatable
-* Write like you're texting a friend about their wine preferences`
+Line 1: DESCRIPTION: [a 70-80 word personality description]
+Line 2: ACIDITY: [must be exactly Low, Medium, or High]
+Line 3: BODY: [must be exactly Light, Medium, or Full]
+Line 4: SWEETNESS: [must be exactly Low, Medium, or High]
+Line 5: FLAVOURS: [must be exactly three from this list, separated by commas: Cherry, Vanilla, Mineral, Lychee, Peach, Citrus, Floral, Oak, Tropical, Stone fruit, Herbs]
+
+Do not add any extra words, labels, or variations to the values.
+Each line must start with exactly the label specified (e.g., "DESCRIPTION:", "ACIDITY:") followed by a single space and then just the value.
+Don't include "ACIDITY:", "BODY:", etc. within the actual values themselves.
+
+Here are the survey answers to analyze:
+${JSON.stringify(surveyAnswers, null, 2)}`
+        }]
       })
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Error:', errorData);
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error('API error');
     }
 
     const data = await response.json();
-    return JSON.parse(data.content[0].text);
+    const text = data.content[0].text;
+    
+    // Parse the text response into lines, removing empty lines and extra whitespace
+    const lines = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    console.log('Raw response from Claude:', text);
+    console.log('Split lines:', lines);
+
+    // Strict parsing function
+    const parseProfileLine = (line, expectedLabel) => {
+      if (!line.startsWith(expectedLabel)) {
+        console.error(`Line should start with "${expectedLabel}": ${line}`);
+        return '';
+      }
+      return line.substring(expectedLabel.length + 1).trim();
+    };
+    
+    // Create the profile object with strict parsing
+    const profile = {
+      personalityDescription: parseProfileLine(lines[0], 'DESCRIPTION'),
+      preferences: {
+        acidity: parseProfileLine(lines[1], 'ACIDITY'),
+        body: parseProfileLine(lines[2], 'BODY'),
+        sweetness: parseProfileLine(lines[3], 'SWEETNESS'),
+        flavours: parseProfileLine(lines[4], 'FLAVOURS')
+      }
+    };
+
+    console.log('Parsed profile:', JSON.stringify(profile, null, 2));
+    return profile;
+
   } catch (error) {
-    console.error('Error generating profile:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function generateClaudeResponse(userMessage, wineProfile = null, messageHistory = []) {
   try {
-    let systemPrompt = `You are Remi, a friendly and knowledgeable wine guide for everyone.
+    let systemPrompt = `You are Remi, a friendly person who has knowledge about wine and can describe it in a way that non-wine drinkers understand.
 
-    Guidelines:
-    * Be friendly, concise, and simple—respond in 65 words or less.
-    * Don't assume the occasion unless it's mentioned.
-    * Start with a clear recommendation, followed by why the user might like it.
-    * Use everyday language, no jargon. Describe flavors simply (e.g., peachy, citrusy etc).
-    * Focus on how the wine fits the vibe and what to avoid.`;
-    
+Follow these guidelines:
+* Length: Respond in 50 words or less.
+* Tone: Your tone should be friendly, casual, concise, and informative.
+* Language: Use simple, everyday language that anyone can understand.
+* Response structure: The first sentence should be to the point and include what is being recommended to the user. The next lines should describe why the user would like the wine and how it matches their palette, including the wine's flavour and how it might match the mood for the user.
+
+When discussing wine:
+* Focus on: How the wine fits the vibe and mood of the person, rather than the specifics of the wine itself. Give a simple description of the wine like whether it's red, white, sparkling, but don't get too technical.
+* Avoid: Do not use any wine jargon or technical words. For example, don't use words like tannins, mouthfeel, instead use words like how it feels on your mouth.
+* Describe flavors as: How it actually tastes and make it easy to understand, words like fruity, citrusy, peachy, spicy, peppery, buttery, easy words like that.`;
+
     if (wineProfile) {
       systemPrompt += `\n\nConsider their profile:
+* Aura: "${wineProfile.auraName}"
+* Personality: "${wineProfile.personalityDescription}"
 * Preferences: "${wineProfile.winePreferences}"`;
     }
 
