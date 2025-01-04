@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { clearStoredData } from './storage-utils';
 
@@ -14,8 +14,6 @@ export default function Profile() {
     month: 'short',
     year: '2-digit'
   }).replace(/ /g, ' ').toUpperCase();
-
-  const preferences = parsedProfile.preferences;
 
   const handleReset = async () => {
     try {
@@ -47,26 +45,26 @@ export default function Profile() {
             {parsedProfile.personalityDescription}
           </Text>
 
-          <Text style={styles.preferencesTitle}>TASTE PREFERENCES</Text>
+          <Text style={styles.sectionTitle}>TASTE PREFERENCES</Text>
           
           <View style={styles.preferenceRow}>
             <Text style={styles.preferenceLabel}>Acidity</Text>
-            <Text style={styles.preferenceValue}>{parsedProfile.preferences.acidity}</Text>
+            <Text style={styles.preferenceValue}>{parsedProfile.preferences?.acidity}</Text>
           </View>
 
           <View style={styles.preferenceRow}>
             <Text style={styles.preferenceLabel}>Body</Text>
-            <Text style={styles.preferenceValue}>{parsedProfile.preferences.body}</Text>
+            <Text style={styles.preferenceValue}>{parsedProfile.preferences?.body}</Text>
           </View>
 
           <View style={styles.preferenceRow}>
             <Text style={styles.preferenceLabel}>Sweetness</Text>
-            <Text style={styles.preferenceValue}>{parsedProfile.preferences.sweetness}</Text>
+            <Text style={styles.preferenceValue}>{parsedProfile.preferences?.sweetness}</Text>
           </View>
 
           <View style={styles.preferenceRow}>
             <Text style={styles.preferenceLabel}>Flavours</Text>
-            <Text style={styles.preferenceValue}>{parsedProfile.preferences.flavours}</Text>
+            <Text style={styles.preferenceValue}>{parsedProfile.preferences?.flavours}</Text>
           </View>
         </View>
       </View>
@@ -132,11 +130,11 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#000',
   },
-  preferencesTitle: {
+  sectionTitle: {
     fontSize: 12,
     fontFamily: 'monospace',
+    marginBottom: 15,
     color: '#000',
-    marginBottom: 20,
   },
   preferenceRow: {
     flexDirection: 'row',

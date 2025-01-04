@@ -51,8 +51,12 @@ ${JSON.stringify(surveyAnswers, null, 2)}`
     console.log('Raw response from Claude:', text);
     console.log('Split lines:', lines);
 
-    // Strict parsing function
+    // Strict parsing function with better error handling
     const parseProfileLine = (line, expectedLabel) => {
+      if (!line) {
+        console.error(`Missing line for "${expectedLabel}"`);
+        return '';
+      }
       if (!line.startsWith(expectedLabel)) {
         console.error(`Line should start with "${expectedLabel}": ${line}`);
         return '';
@@ -60,16 +64,25 @@ ${JSON.stringify(surveyAnswers, null, 2)}`
       return line.substring(expectedLabel.length + 1).trim();
     };
     
-    // Create the profile object with strict parsing
+    // Create the profile object with validation and fallbacks
     const profile = {
       personalityDescription: parseProfileLine(lines[0], 'DESCRIPTION'),
       preferences: {
-        acidity: parseProfileLine(lines[1], 'ACIDITY'),
-        body: parseProfileLine(lines[2], 'BODY'),
-        sweetness: parseProfileLine(lines[3], 'SWEETNESS'),
-        flavours: parseProfileLine(lines[4], 'FLAVOURS')
+        acidity: parseProfileLine(lines[1], 'ACIDITY') || 'Medium',
+        body: parseProfileLine(lines[2], 'BODY') || 'Medium',
+        sweetness: parseProfileLine(lines[3], 'SWEETNESS') || 'Medium',
+        flavours: parseProfileLine(lines[4], 'FLAVOURS') || 'Citrus, Stone fruit, Floral'
       }
     };
+
+    // Validate the profile
+    if (!profile.personalityDescription) {
+      console.error('Missing personality description');
+    }
+    if (!profile.preferences.acidity || !profile.preferences.body || 
+        !profile.preferences.sweetness || !profile.preferences.flavours) {
+      console.error('Missing required preferences:', profile);
+    }
 
     console.log('Parsed profile:', JSON.stringify(profile, null, 2));
     return profile;
