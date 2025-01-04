@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   answerButton: {
     padding: 16,
     marginVertical: 6,
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.background,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   continueButton: {
-    backgroundColor: theme.colors.button,
+    backgroundColor: 'black',
     padding: 16,
     borderRadius: 8,
     position: 'absolute',

@@ -152,6 +152,7 @@ export default function Page() {
       setIsTyping(false);
     }
   }, [messages, pendingImage, wineProfile]);
+
   const renderBubble = (props) => {
     return (
       <Bubble
@@ -159,32 +160,42 @@ export default function Page() {
         wrapperStyle={{
           left: {
             backgroundColor: 'transparent',
-            marginVertical: 8,
+            marginVertical: 4,
+            marginRight: 60,
+            marginLeft: 16,
           },
           right: {
             backgroundColor: 'white',
-            marginVertical: 8,
-            borderRadius: 24,  // More rounded corners
+            marginVertical: 4,
+            marginLeft: 60,
+            marginRight: 16,
+            borderRadius: 18,
+            paddingHorizontal: 2,
+            paddingVertical: 2,
             shadowColor: '#000',
             shadowOffset: {
               width: 0,
-              height: 1,
+              height: 2,
             },
-            shadowOpacity: 0.08,  // Very subtle shadow
-            shadowRadius: 8,      // Soft spread
-            elevation: 2,         // Android shadow
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 1,
           },
         }}
         textStyle={{
           left: {
             color: '#2B2B2B',
-            fontSize: 15,
+            fontSize: 16,
+            lineHeight: 24,
+            fontWeight: '400',
+            paddingHorizontal: 12,
           },
           right: {
             color: '#2B2B2B',
-            fontSize: 17,         // Slightly larger font
-            lineHeight: 24,       // Better line height
-            fontWeight: '400',    // Regular weight
+            fontSize: 16,
+            lineHeight: 24,
+            fontWeight: '400',
+            paddingHorizontal: 12,
           },
         }}
       />
@@ -268,15 +279,14 @@ export default function Page() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>{getGreeting()},</Text>
-        <Text style={styles.name}>Renee</Text>
-        <Text style={styles.helperText}>
-          Ask Remi for wine suggestions, pairings or just have a chat about wine ✨
-        </Text>
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <Text style={styles.greeting}>{getGreeting()}, Renee!</Text>
+          <Text style={styles.vibeText}>What's the vibe today?</Text>
+        </View>
+        <PresetPrompts onPromptSelect={handlePromptSelect} />
       </View>
-      <PresetPrompts onPromptSelect={handlePromptSelect} />
-      <View style={[styles.chatContainer, { marginTop: 10 }]}>
+      <View style={styles.chatContainer}>
         <GiftedChat
           messages={messages}
           onSend={onSend}
@@ -288,9 +298,15 @@ export default function Page() {
           minInputToolbarHeight={60}
           maxComposerHeight={100}
           isTyping={isTyping}
+          inverted={true}
           textInputProps={{
             keyboardAppearance: 'light',
-            
+          }}
+          listViewProps={{
+            style: {
+              paddingLeft: 8,
+              paddingRight: 8,
+            },
           }}
         />
       </View>
@@ -303,30 +319,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  chatContainer: {
-    flex: 1,
+  headerContainer: {
+    paddingTop: Platform.OS === 'ios' ? 10 : 40,
+    paddingHorizontal: 20,
+    backgroundColor: theme.colors.background,
   },
   header: {
-    padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 10 : 40,
-    alignItems: 'center',
+    marginBottom: 24,
   },
   greeting: {
     fontSize: 32,
     fontFamily: theme.fonts.heading,
     color: theme.colors.text,
-    textAlign: 'center',
+    marginBottom: 8,
   },
-  name: {
-    fontSize: 32,
-    fontFamily: theme.fonts.heading,
-    color: theme.colors.text,
+  vibeText: {
+    fontSize: 18,
+    color: '#666',
     marginBottom: 20,
   },
-  helperText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+  chatContainer: {
+    flex: 1,
     marginTop: 20,
   },
   inputContainer: {
