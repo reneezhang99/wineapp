@@ -1,4 +1,4 @@
-import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { clearStoredData } from './storage-utils';
 
@@ -6,44 +6,82 @@ export default function Profile() {
   const router = useRouter();
   const { profile } = useLocalSearchParams();
   const parsedProfile = JSON.parse(profile);
+  console.log('Parsed Profile Data:', parsedProfile);
+
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: '2-digit'
+  }).replace(/ /g, ' ').toUpperCase();
 
   const handleReset = async () => {
     try {
       await clearStoredData();
-      router.push('/');
+      router.replace('/');
     } catch (error) {
       console.error('Error resetting:', error);
+      Alert.alert('Error', 'Failed to reset. Please try again.');
     }
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollContent}>
-        <View style={styles.content}>
-          <Text style={styles.title}>
-            <Text>🍷</Text> Your Wine Personality <Text>🍷</Text>
-          </Text>
+      <Image
+        source={require('../assets/images/background.png')}
+        style={StyleSheet.absoluteFill}
+      />
+      
+      <View style={styles.contentContainer}>
+        <View style={styles.card}>
+          <View style={styles.header}>
+            <Text style={styles.dateText}>WINE PERSONA</Text>
+            <Text style={styles.headerText}>{formattedDate}</Text>
+          </View>
+
+          <Text style={styles.title}>Your Wine Persona</Text>
           
-          <Text style={styles.subheading}>Aura Name: {parsedProfile.auraName}</Text>
-          
-          <Text style={styles.paragraph}>
+          <Text style={styles.description}>
             {parsedProfile.personalityDescription}
           </Text>
 
-          <Text style={styles.subheading}>Wine Preferences and Recommendations:</Text>
-          <Text style={styles.paragraph}>
-            {parsedProfile.winePreferences}
-          </Text>
-        </View>
-      </ScrollView>
+          <Text style={styles.sectionTitle}>TASTE PREFERENCES</Text>
+          
+          <View style={styles.preferenceRow}>
+            <Text style={styles.preferenceLabel}>Acidity</Text>
+            <Text style={styles.preferenceValue}>{parsedProfile.preferences?.acidity}</Text>
+          </View>
 
-      {/* Only dev reset button at bottom */}
-      <View style={styles.buttonContainer}>
+          <View style={styles.preferenceRow}>
+            <Text style={styles.preferenceLabel}>Body</Text>
+            <Text style={styles.preferenceValue}>{parsedProfile.preferences?.body}</Text>
+          </View>
+
+          <View style={styles.preferenceRow}>
+            <Text style={styles.preferenceLabel}>Sweetness</Text>
+            <Text style={styles.preferenceValue}>{parsedProfile.preferences?.sweetness}</Text>
+          </View>
+
+          <View style={styles.preferenceRow}>
+            <Text style={styles.preferenceLabel}>Flavours</Text>
+            <Text style={styles.preferenceValue}>{parsedProfile.preferences?.flavours}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.bottomContainer}>
         <TouchableOpacity 
-          style={styles.devButton} 
           onPress={handleReset}
+          style={styles.retakeButton}
         >
-          <Text style={styles.devButtonText}>Reset Survey (Dev)</Text>
+          <Text style={styles.retakeText}>Retake the quiz</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.continueButton} 
+          onPress={() => router.replace('actions')}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -53,43 +91,88 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
-  },
-  scrollContent: {
-    flex: 1,
-  },
-  content: {
     padding: 20,
-    paddingTop: 60,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  dateText: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: '#000',
+  },
+  headerText: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: '#000',
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: '600',
     marginBottom: 20,
+    color: '#000',
   },
-  subheading: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 10,
-  },
-  paragraph: {
+  description: {
     fontSize: 16,
     lineHeight: 24,
+    marginBottom: 30,
+    color: '#000',
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    marginBottom: 15,
+    color: '#000',
+  },
+  preferenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+    paddingVertical: 15,
+  },
+  preferenceLabel: {
+    fontSize: 16,
+    color: '#000',
+  },
+  preferenceValue: {
+    fontSize: 16,
+    color: '#000',
+  },
+  bottomContainer: {
+    gap: 12,
+    marginTop: 'auto',
     marginBottom: 20,
   },
-  buttonContainer: {
-    padding: 20,
-    paddingBottom: 40,
-    alignItems: 'flex-end', // Aligns reset button to right
+  retakeButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
   },
-  devButton: {
-    backgroundColor: '#666',
-    padding: 10,
-    borderRadius: 5,
+  retakeText: {
+    color: '#fff',
+    fontSize: 16,
   },
-  devButtonText: {
-    color: 'white',
-    fontSize: 12,
-  }
+  continueButton: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  continueButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '500',
+  },
 });

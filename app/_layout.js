@@ -35,6 +35,8 @@ export default function Layout() {
       />
       <Stack.Screen name="survey" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="actions" />
+      <Stack.Screen name="camera" />  {/* No need for the component prop */}
     </Stack>
   );
 }
